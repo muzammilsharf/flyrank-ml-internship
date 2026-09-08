@@ -1,0 +1,23 @@
+{
+  "model": "LightGBM",
+  "precision_at_50_mean": 0.788,
+  "precision_at_50_std": 0.122,
+  "precision_at_50_range": [
+    0.56,
+    0.94
+  ],
+  "validation_seeds": [
+    42,
+    7,
+    123,
+    2024,
+    99
+  ],
+  "excluded_client": "client_08a6a72ff48e62c0",
+  "excluded_periods": [
+    "2026-03",
+    "2026-04"
+  ],
+  "total_features": 28,
+  "total_scored_pages": 357671
+}
