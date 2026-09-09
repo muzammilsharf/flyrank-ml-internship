@@ -258,17 +258,15 @@
 
 <main>
 <div class="wrap">
-
   <section id="intro">
-    <div class="section-num">1</div>
     <h2>Introduction</h2>
     <p>Content sites can have thousands of pages. Editors do not have time to check every page every week. When a page starts losing search traffic, someone needs to notice early and know it is worth fixing. This is a resourcing problem as much as a content problem.</p>
     <p>This project asks a simple question: <strong>can a page's past traffic and content data tell us which pages to check first?</strong> The answer supports a weekly review list for editors. When a page is flagged, an editor might rewrite the title, refresh the content, or just confirm the page is fine. Getting this wrong costs something either way: flagging a healthy page wastes an editor's time, and missing a real decline means the page keeps losing traffic unnoticed.</p>
     <p>A ranked list is only useful if it tells the truth about how good it really is. Most of this paper is about that: finding and fixing three real problems before trusting the numbers, and reporting a range instead of one flattering number.</p>
+    <p>This mirrors a real problem inside FlyRank itself: its own editorial teams face the same limited-review-capacity challenge across many client sites, which is exactly why "Refresh / Content Opportunity Scoring" exists as one of the program's core lanes.</p> 
   </section>
 
   <section id="data">
-    <div class="section-num">2</div>
     <h2>Data</h2>
     <p>All data comes from the <strong>FlyRank internship warehouse</strong>. It holds real search data, with names and IDs replaced by safe codes. Two tables were used:</p>
     <ul>
@@ -285,7 +283,6 @@
   </section>
 
   <section id="methodology">
-    <div class="section-num">3</div>
     <h2>Methodology</h2>
     <h3>What we predict</h3>
     <p>For each page, we look at the last 30 days inside its 90-day window, and compare that to the 30 days right after. If search impressions drop more than 20%, we call the page <strong>declining</strong>. Pages with fewer than 100 impressions are skipped, because small numbers (like going from 1 click to 0) make the percent change meaningless.</p>
@@ -298,7 +295,6 @@
   </section>
 
   <section id="results">
-    <div class="section-num">4</div>
     <h2>Results</h2>
     <p>We compared four types of models, all tested the same way: Logistic Regression, a single Decision Tree, Random Forest, and LightGBM.</p>
 
@@ -325,7 +321,6 @@
   </section>
 
   <section id="limitations">
-    <div class="section-num">5</div>
     <h2>Limitations &amp; honest framing</h2>
     <ul>
       <li><strong>This does not prove cause and effect.</strong> A high risk score means the page looks like others that later declined. It does not guarantee the page will decline, and it does not prove that a specific fix would help.</li>
@@ -338,7 +333,6 @@
   </section>
 
   <section id="recommendations">
-    <div class="section-num">6</div>
     <h2>Ranked recommendations</h2>
     <p>The model's output becomes a weekly review list. Each page gets a risk score and a reason code, so the editor knows *why* it was flagged, not just that it was.</p>
 
@@ -397,8 +391,8 @@
 
 <footer>
   <div class="wrap">
-    <p>Built on the FlyRank ML Internship dataset — <a href="https://flyrank.ai" target="_blank" rel="noopener">flyrank.ai</a>.</p>
-    <p>Author: Muzamil · <a href="mailto:sharfmuzamil@gmail.com">Email</a> · <a href="https://github.com/muzammilsharf" target="_blank" rel="noopener">GitHub</a> · <a href="https://linkedin.com/in/muzammilsharf" target="_blank" rel="noopener">LinkedIn</a></p>
+    <p>Built on the FlyRank AI dataset — <a href="https://flyrank.ai" target="_blank" rel="noopener">flyrank.ai</a>.</p>
+    <p><strong>Author:</strong> Muhammad Muzammil · <a href="mailto:sharfmuzamil@gmail.com">Email</a> · <a href="https://github.com/muzammilsharf" target="_blank" rel="noopener">GitHub</a> · <a href="https://linkedin.com/in/muzammilsharf" target="_blank" rel="noopener">LinkedIn</a></p>
   </div>
 </footer>
 
