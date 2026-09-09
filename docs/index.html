@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predicting Search Traffic Decay — A Decision-Support Model for Content Prioritization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#FBFAF7;
+    --ink:#1B1D22;
+    --grey:#6B6D72;
+    --hairline:#D8D5CC;
+    --panel:#F1EFE9;
+    --decline:#A6452E;
+    --growth:#2F6F62;
+    --decline-soft:#E8D3CC;
+    --growth-soft:#D3E2DD;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', system-ui, sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--decline-soft);}
+  a{color:var(--decline); text-decoration-thickness:1px; text-underline-offset:2px;}
+  a:hover{color:var(--ink);}
+
+  .wrap{max-width:720px; margin:0 auto; padding:0 24px;}
+  .wide{max-width:920px; margin:0 auto; padding:0 24px;}
+
+  header.hero{
+    padding:88px 0 56px;
+    border-bottom:1px solid var(--hairline);
+  }
+  .hero .kicker{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    color:var(--grey);
+    letter-spacing:0.02em;
+    margin-bottom:18px;
+  }
+  h1{
+    font-family:'Source Serif 4', serif;
+    font-weight:700;
+    font-size:clamp(32px, 5vw, 46px);
+    line-height:1.15;
+    margin:0 0 22px;
+    max-width:14ch;
+  }
+  .abstract{
+    font-size:18px;
+    color:#3A3D44;
+    max-width:62ch;
+    margin:0 0 40px;
+  }
+  .abstract .initial{
+    font-family:'Source Serif 4', serif;
+    font-size:1.4em;
+    font-weight:600;
+  }
+
+  .stat-strip{
+    display:flex;
+    gap:0;
+    border:1px solid var(--hairline);
+    background:white;
+    margin-top:8px;
+  }
+  .stat{
+    flex:1;
+    padding:20px 22px;
+    border-right:1px solid var(--hairline);
+  }
+  .stat:last-child{border-right:none;}
+  .stat .num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:26px;
+    font-weight:500;
+    line-height:1;
+  }
+  .stat .num.decline{color:var(--decline);}
+  .stat .num.growth{color:var(--growth);}
+  .stat .label{
+    font-size:13px;
+    color:var(--grey);
+    margin-top:6px;
+  }
+
+  main{padding:56px 0 20px;}
+  section{padding:44px 0;}
+  section + section{border-top:1px solid var(--hairline);}
+
+  .section-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    color:var(--grey);
+    margin-bottom:8px;
+  }
+  h2{
+    font-family:'Source Serif 4', serif;
+    font-size:26px;
+    font-weight:600;
+    margin:0 0 22px;
+  }
+  h3{
+    font-family:'Source Serif 4', serif;
+    font-size:18px;
+    font-weight:600;
+    margin:28px 0 10px;
+  }
+  p{margin:0 0 16px; max-width:66ch;}
+  ul, ol{margin:0 0 16px; padding-left:22px;}
+  li{margin-bottom:8px; max-width:64ch;}
+
+  .callout{
+    border-left:3px solid var(--decline);
+    background:var(--panel);
+    padding:14px 18px;
+    margin:20px 0;
+    font-size:15px;
+  }
+  .callout.growth{border-left-color:var(--growth);}
+
+  code, .mono{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.88em;
+    background:var(--panel);
+    padding:1px 5px;
+    border-radius:2px;
+  }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin:20px 0;
+    font-size:15px;
+  }
+  th, td{
+    text-align:left;
+    padding:10px 12px;
+    border-bottom:1px solid var(--hairline);
+  }
+  th{
+    font-weight:500;
+    color:var(--grey);
+    font-size:13px;
+    text-transform:none;
+  }
+  td.num, th.num{
+    font-family:'IBM Plex Mono', monospace;
+    text-align:right;
+  }
+  tr.highlight td{
+    background:var(--panel);
+    font-weight:500;
+  }
+  tr.flagged td{
+    color:var(--grey);
+  }
+
+  .chart-panel{
+    background:white;
+    border:1px solid var(--hairline);
+    padding:24px;
+    margin:24px 0;
+  }
+  .chart-caption{
+    font-size:13px;
+    color:var(--grey);
+    margin-top:10px;
+  }
+
+  .reason-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin:20px 0;
+  }
+  @media (max-width:640px){ .reason-grid{grid-template-columns:1fr;} }
+  .reason-card{
+    border:1px solid var(--hairline);
+    padding:16px 18px;
+    background:white;
+  }
+  .reason-card .code{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--decline);
+    margin-bottom:8px;
+  }
+  .reason-card p{margin:0; font-size:14px;}
+
+  .no-go{
+    border:1px solid var(--decline);
+    background:#FCF3F1;
+    padding:18px 20px;
+    margin:20px 0;
+  }
+  .no-go h3{margin-top:0; color:var(--decline);}
+
+  footer{
+    padding:48px 0 80px;
+    border-top:1px solid var(--hairline);
+  }
+  footer p{color:var(--grey); font-size:14px;}
+
+  .repro-links{list-style:none; padding:0;}
+  .repro-links li{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+    padding:8px 0;
+    border-bottom:1px solid var(--hairline);
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">Applied Search Intelligence · Refresh / Content Opportunity Scoring</div>
+    <h1>Predicting Search Traffic Decay: A Decision-Support Model for Content Prioritization</h1>
+
+    <p style="font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--grey); margin:-8px 0 32px;">
+      By Muhammad Muzammil (AI/ML Engineer)·
+      <a href="mailto:sharfmuzamil@gmail.com">Email</a> ·
+      <a href="https://github.com/muzammilsharf" target="_blank" rel="noopener">GitHub</a> ·
+      <a href="https://linkedin.com/in/muzammilsharf" target="_blank" rel="noopener">LinkedIn</a>
+    </p>
+    <p class="abstract"><span class="initial">C</span>ontent teams do not have time to check every page. This project builds a model that ranks pages by risk of losing search traffic, so editors know which ones to check first. It uses 18 months of real search data. A machine learning model (LightGBM) looks at 90 days of a page's history and predicts if it will decline over the next 30 days. The model was tested on clients it had never seen before, to make sure the result is honest. Across five separate tests, the model's top 50 picks were right 78.8% of the time on average, much better than a simple rule (24%). This is a tool to help human reviewers decide what to check first. It is not a guarantee, and it does not prove cause and effect.</p>
+    <div class="stat-strip">
+      <div class="stat">
+        <div class="num decline">78.8%</div>
+        <div class="label">Mean Precision@50 (5 seeds)</div>
+      </div>
+      <div class="stat">
+        <div class="num">24.0%</div>
+        <div class="label">Transparent baseline</div>
+      </div>
+      <div class="stat">
+        <div class="num growth">36</div>
+        <div class="label">Clients in holdout pool</div>
+      </div>
+      <div class="stat">
+        <div class="num">357,671</div>
+        <div class="label">Eligible page-snapshots</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+
+  <section id="intro">
+    <div class="section-num">1</div>
+    <h2>Introduction</h2>
+    <p>Content sites can have thousands of pages. Editors do not have time to check every page every week. When a page starts losing search traffic, someone needs to notice early and know it is worth fixing. This is a resourcing problem as much as a content problem.</p>
+    <p>This project asks a simple question: <strong>can a page's past traffic and content data tell us which pages to check first?</strong> The answer supports a weekly review list for editors. When a page is flagged, an editor might rewrite the title, refresh the content, or just confirm the page is fine. Getting this wrong costs something either way: flagging a healthy page wastes an editor's time, and missing a real decline means the page keeps losing traffic unnoticed.</p>
+    <p>A ranked list is only useful if it tells the truth about how good it really is. Most of this paper is about that: finding and fixing three real problems before trusting the numbers, and reporting a range instead of one flattering number.</p>
+  </section>
+
+  <section id="data">
+    <div class="section-num">2</div>
+    <h2>Data</h2>
+    <p>All data comes from the <strong>FlyRank internship warehouse</strong>. It holds real search data, with names and IDs replaced by safe codes. Two tables were used:</p>
+    <ul>
+      <li><code>fact_content_daily_performance</code> — one row for each client, page, and day. It covers 18 months (January 2025 to June 2026), about 78.8 million rows before filtering.</li>
+      <li><code>dim_content</code> — one row for each page. It gives page details: word count, content type, search intent, competition level, backlinks, and creation date.</li>
+    </ul>
+    <p>For each page, the data was built into 90-day windows (to look at the past) and 30-day windows (to check what happened next). Some months were dropped because their windows ran past the edge of the dataset. The final data covers <strong>May 2025 to April 2026</strong>: 357,671 page-snapshots, across 36 clients.</p>
+    <h3>What was left out, and why</h3>
+    <ul>
+      <li><strong>One client</strong> was removed completely. Its data showed hundreds of different pages with nearly the same numbers on the same date. Real pages do not behave this way. This looks like a flaw in how the practice data was made, not a real pattern.</li>
+      <li><strong>March and April 2026</strong> were left out of the final test. In these two months, many clients showed a real, sharp rise in declining pages (about 57%, versus 17–34% in other months). This looks real, not a mistake. But we do not know why it happened (a Google update? a seasonal dip? something else?). So it is reported on its own, separate from the main result.</li>
+      <li>Rows with no valid Search Console data. Pages younger than 90 days, since they do not have enough history for a full 90-day window.</li>
+    </ul>
+  </section>
+
+  <section id="methodology">
+    <div class="section-num">3</div>
+    <h2>Methodology</h2>
+    <h3>What we predict</h3>
+    <p>For each page, we look at the last 30 days inside its 90-day window, and compare that to the 30 days right after. If search impressions drop more than 20%, we call the page <strong>declining</strong>. Pages with fewer than 100 impressions are skipped, because small numbers (like going from 1 click to 0) make the percent change meaningless.</p>
+    <h3>What signals the model uses</h3>
+    <p>The model uses 28 signals in three groups: traffic (impressions, clicks, click rate, average position, how much the position moves around), engagement where tracked (engaged sessions, time on page, organic traffic share, scroll events), and page details (word count, character count, search volume, competition, backlinks, content type, search intent). <strong>We removed content age on purpose</strong>. Testing showed it was secretly tied to the calendar month, not the page's real age (see Limits).</p>
+    <h3>The baseline</h3>
+    <p>The baseline is a simple, easy-to-check rule: <code>(expected click rate for the page's position − real click rate) × log(impressions)</code>. It flags pages that get fewer clicks than normal for their rank. This baseline scored 24.0% Precision@50. Its main flaw: it often flags top-ranked pages that get zero clicks because Google already answers the question on the search page.</p>
+    <h3>How we tested it</h3>
+    <p>We tried two other ways to split the data first, and both gave a suspicious perfect score (Precision@50 = 1.000). One split was by date, one was grouped by page. Both failed because pages from the same client behave alike, so the model could cheat by learning client patterns. The final method holds out whole clients: no client's pages appear in both the training data and the test data. Since there are only 36 clients, one single split can be lucky or unlucky. So we ran the test 5 times with different random splits and report the average, not just one number.</p>
+  </section>
+
+  <section id="results">
+    <div class="section-num">4</div>
+    <h2>Results</h2>
+    <p>We compared four types of models, all tested the same way: Logistic Regression, a single Decision Tree, Random Forest, and LightGBM.</p>
+
+    <div class="chart-panel">
+      <canvas id="modelChart" height="220"></canvas>
+      <div class="chart-caption">Precision@50 by model, single client-holdout split (random_state=42). LightGBM's single-split score is shown for comparison but is not the reported result, see note below.</div>
+    </div>
+
+    <table>
+      <tr><th>Method</th><th class="num">Precision@50</th></tr>
+      <tr><td>Transparent baseline (heuristic)</td><td class="num">0.240</td></tr>
+      <tr><td>Logistic Regression</td><td class="num">0.560</td></tr>
+      <tr class="flagged"><td>Decision Tree (single tree, high variance)</td><td class="num">0.920</td></tr>
+      <tr><td>Random Forest</td><td class="num">0.260</td></tr>
+      <tr class="flagged"><td>LightGBM, single split</td><td class="num">0.940</td></tr>
+      <tr class="highlight"><td>LightGBM, mean of 5 client-holdout splits</td><td class="num">0.788</td></tr>
+    </table>
+
+    <div class="callout">
+      The 0.940 score from LightGBM's single test is <strong>not</strong> our real result. We checked it and found a problem: the "content age" signal was quietly tied to the calendar month. Because of this, the model was mostly just spotting the real traffic drop in March–April 2026 (78% of its top picks came from that one month), not learning a real pattern about individual pages. We removed that signal and left those two months out of the final test.
+    </div>
+
+    <p>After this fix, the average score across five different tests (random seeds 42, 7, 123, 2024, 99) was <strong>0.788</strong> (± 0.122, range 0.560–0.940). This spread matters: with only 36 clients, the exact test group changes the result a lot. Reporting a range is more honest than picking one lucky number.</p>
+  </section>
+
+  <section id="limitations">
+    <div class="section-num">5</div>
+    <h2>Limitations &amp; honest framing</h2>
+    <ul>
+      <li><strong>This does not prove cause and effect.</strong> A high risk score means the page looks like others that later declined. It does not guarantee the page will decline, and it does not prove that a specific fix would help.</li>
+      <li><strong>The March–April 2026 spike is not explained.</strong> The rise in declining pages is real, but we do not know why it happened. We have not tested how the model performs during a similar event in the future.</li>
+      <li><strong>Small number of clients.</strong> With only 36 clients, the true accuracy should be read as a range (0.56 to 0.94), not one fixed number.</li>
+      <li><strong>Uneven tracking.</strong> Only about 17% of page-snapshots had Google Analytics data. Engagement-based signals only work where this data exists.</li>
+      <li><strong>One client was left out</strong> because of a likely data problem. This limits the scope of the analysis, but is not related to model quality.</li>
+      <li>This is a <strong>decision-support</strong> tool, meant to help humans decide. It does not claim to have found a Google ranking factor, and nothing here should be read as proof of how search algorithms work.</li>
+    </ul>
+  </section>
+
+  <section id="recommendations">
+    <div class="section-num">6</div>
+    <h2>Ranked recommendations</h2>
+    <p>The model's output becomes a weekly review list. Each page gets a risk score and a reason code, so the editor knows *why* it was flagged, not just that it was.</p>
+
+    <div class="reason-grid">
+      <div class="reason-card">
+        <div class="code">SEVERE_CTR_DEFICIT</div>
+        <p>Good position, but too few clicks. What to do: check the title and snippet text. Watch out: pages at position 1–3 with zero clicks are often just answer boxes, not real problems.</p>
+      </div>
+      <div class="reason-card">
+        <div class="code">PAGE_ONE_OPPORTUNITY</div>
+        <p>Ranks on page two (position 11–20), but real search demand exists. What to do: add more depth and more internal links.</p>
+      </div>
+      <div class="reason-card">
+        <div class="code">LOW_ENGAGEMENT</div>
+        <p>People click, but leave fast. What to do: check the page's structure and opening paragraph. Only works where tracking data exists.</p>
+      </div>
+      <div class="reason-card">
+        <div class="code">GENERAL_DECLINE_RISK</div>
+        <p>High risk, but no single clear reason. What to do: a general freshness check.</p>
+      </div>
+    </div>
+
+    <h3>A human must check every flag</h3>
+    <p>Before acting, a reviewer should check: is another page on the same site absorbing this traffic? Is this just a seasonal dip? Did the search results page change? Was this page updated very recently?</p>
+
+    <div class="no-go">
+      <h3>What should never be automated</h3>
+      <ul>
+        <li>Publishing content or title changes automatically, based only on the score.</li>
+        <li>Deleting or hiding pages automatically.</li>
+        <li>Showing the risk score in public as a claim about page quality.</li>
+        <li>Acting on scores from an unusual period (like March–April 2026) without a separate check.</li>
+      </ul>
+    </div>
+
+    <h3>When to watch closely or retrain</h3>
+    <p>Retrain the model, or pause it, if: the overall decline rate moves far outside the normal 17–57% range, a new client shows the same odd duplicate-data pattern we found and removed, or the score stays below about 55% accuracy for more than one month in a row. Plan: retrain every month, once that month's 30-day result is known.</p>
+  </section>
+
+  <section id="repro">
+    <div class="section-num">7</div>
+    <h2>Reproducibility</h2>
+    <p>Every step in this paper, from the first simple baseline to the final tested model, can be re-run from the notebooks in this project's repository:</p>
+    <ul class="repro-links">
+      <li>w04_baseline_score.ipynb — transparent heuristic baseline</li>
+      <li>w05_model.ipynb — label design, feature pipeline, model comparison</li>
+      <li>w06_validation_audit.ipynb — before/after split comparison, leakage audit</li>
+      <li>w07_action_playbook.ipynb — ranked queue, reason codes, exports</li>
+      <li>capstone.ipynb — this paper's full narrative and figures</li>
+    </ul>
+    <p>We used fixed random seeds everywhere (model training: 42; the 5-way test: 42, 7, 123, 2024, 99). Anyone can clone the repository and re-run these notebooks against the same warehouse data to get the same numbers.</p>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Built on the FlyRank ML Internship dataset — <a href="https://flyrank.ai" target="_blank" rel="noopener">flyrank.ai</a>.</p>
+    <p>Author: Muzamil · <a href="mailto:sharfmuzamil@gmail.com">Email</a> · <a href="https://github.com/muzammilsharf" target="_blank" rel="noopener">GitHub</a> · <a href="https://linkedin.com/in/muzammilsharf" target="_blank" rel="noopener">LinkedIn</a></p>
+  </div>
+</footer>
+
+<script>
+  const ctx = document.getElementById('modelChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Baseline', 'Logistic\nRegression', 'Decision\nTree*', 'Random\nForest', 'LightGBM\n(single split)*', 'LightGBM\n(mean of 5)'],
+      datasets: [{
+        data: [0.240, 0.560, 0.920, 0.260, 0.940, 0.788],
+        backgroundColor: ['#D8D5CC','#D8D5CC','#E8D3CC','#D8D5CC','#E8D3CC','#2F6F62'],
+        borderRadius: 2,
+        barPercentage: 0.6
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, max: 1, ticks: { callback: v => (v*100).toFixed(0) + '%' }, grid: { color: '#EDEBE4' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
