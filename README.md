@@ -1,6 +1,6 @@
 # Search Traffic Decay Prediction — FlyRank ML Internship Capstone
 
-I built a machine learning model that predicts which web pages are likely to lose search traffic, so content teams know which pages to review first. This repo has the full project: data pipeline, model, validation, and a deployed research paper.
+I built a machine learning model that predicts which web pages are likely to lose search traffic, so content teams know which pages to review first. This repo has the full project: feature pipeline, model, validation, and a deployed research paper.
 
 **Read the full paper:** https://muzammilsharf.github.io/flyrank-ml-internship/
 
@@ -23,30 +23,39 @@ The model correctly identifies declining pages in its top recommendations about 
 
 ## What I actually did
 
-- Built a data pipeline processing 78 million rows from a real search-analytics warehouse (Google Search Console + Google Analytics data), using DuckDB for memory-efficient processing.
-- Found and fixed three real data problems before trusting any result: a filter that silently dropped most of the data, a feature that leaked future information into the model, and a feature that was secretly tied to the calendar month instead of real page age.
-- Compared four model types (Logistic Regression, Decision Tree, Random Forest, LightGBM) under a validation design built to prevent the model from "cheating."
+- Accessed FlyRank's search analytics warehouse (78 million rows of Google Search Console and Google Analytics data, pre-built and hosted by FlyRank) and built a feature-engineering pipeline on top of it using DuckDB and Python, extracting 90-day rolling traffic windows and content signals under limited local hardware.
+- Designed the prediction label (30-day forward decline vs. trailing traffic) and the full feature set, including content metadata joined from a separate reference table.
+- Found and fixed three real data problems before trusting any result: a filter that silently dropped most of the usable data, a feature that leaked future information into the model, and a feature that was secretly tied to the calendar month instead of real page age.
+- Compared four model types (Logistic Regression, Decision Tree, Random Forest, LightGBM) under a validation design built to prevent the model from learning shortcuts instead of real patterns.
 - Reported results honestly, as a range across multiple tests, not a single best-case number.
 
-## Technical Stack & Tooling
-* **Core Languages:** Python, Bash / Zsh
-* **Data Science & Math:** `pandas`, `numpy`, `scikit-learn`
-* **Data Engineering & Storage:** `duckdb` (Out-of-core SQL execution), Parquet formatting
-* **ML Platforms & Pipelines:** Hugging Face Hub (`hf` CLI), Custom Ranking Architectures
-* **Development Environment:** VS Code (Local Linux environment utilizing isolated `venv` virtual environments), Google Colab, Jupyter Notebook
+## Tech stack
+
+Python · DuckDB · pandas · scikit-learn · LightGBM · Hugging Face datasets
 
 ## Project structure
-* work/notebooks/ — weekly build notebooks (data contract, baseline, model, validation, action playbook, capstone)
-* work/capstone_report.md — full written report
-* docs/index.html — the deployed research paper
+
+```
+work/notebooks/          — weekly build notebooks (data contract, baseline, model, validation, action playbook, capstone)
+work/capstone_report.md  — full written report
+docs/index.html          — the deployed research paper
+```
 
 ## How to reproduce
+
 See `work/capstone_report.md`, Section 8, for exact setup steps and commands.
 
 ## About the Author
+
 **Muhammad Muzammil** *Undergraduate Software & AI Engineering Student | Applied Machine Learning Engineer*
 
 ## Connect with Me
+
 * **LinkedIn:** [linkedin.com/in/muzammilsharf](https://www.linkedin.com/in/muzammilsharf/)
 * **GitHub:** [github.com/muzammilsharf](https://github.com/muzammilsharf)
 * **Email:** [sharfmuzamil@gmail.com](mailto:sharfmuzamil@gmail.com)
+
+
+## Data credit
+
+Built on the FlyRank ML Internship dataset.
