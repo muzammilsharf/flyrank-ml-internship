@@ -1,27 +1,32 @@
-# FlyRank ML Engineering Internship Portfolio
+# Search Traffic Decay Prediction — FlyRank ML Internship Capstone
+
+I built a machine learning model that predicts which web pages are likely to lose search traffic, so content teams know which pages to review first. This repo has the full project: data pipeline, model, validation, and a deployed research paper.
+
+**Read the full paper:** https://muzammilsharf.github.io/flyrank-ml-internship/
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![ML Track](https://img.shields.io/badge/Focus-Applied%20ML%20%26%20Ranking%20Systems-00C7B7.svg)]()
 [![Environment](https://img.shields.io/badge/IDE-VS%20Code%20Local-705697.svg)]()
 
-## About the Author
-**Muhammad Muzammil** *Undergraduate Software & AI Engineering Student | Applied Machine Learning Engineer*
+## What this project does
 
-I am an engineering student specializing in autonomous workflows, backend API integrations, and Retrieval-Augmented Generation (RAG) architectures. This repository documents my industry progression through the 12-week **FlyRank Machine Learning Track**, where I build production-grade information retrieval and ranking systems.
+Content teams manage thousands of pages and cannot check every one every week. This model ranks pages by risk of decline, using real search and analytics data, so editors can focus their limited time on the pages that need it most.
 
-### Connect with Me
-* **LinkedIn:** [linkedin.com/in/m-muzammil-](https://www.linkedin.com/in/m-muzammil-/)
-* **GitHub:** [github.com/muzammilsharf](https://github.com/muzammilsharf)
-* **Email:** [sharfmuzamil@gmail.com](mailto:your-email@example.com)
+## Key result
 
----
+| Method | Precision@50 |
+|---|---|
+| Simple rule-based baseline | 24.0% |
+| **Final model (LightGBM)** | **78.8%** (average across 5 tests) |
 
-## Executive Summary
-This repository serves as my active development workspace, weekly assignment binder, and technical portfolio for the **FlyRank Machine Learning Engineering Track**. 
+The model correctly identifies declining pages in its top recommendations about 3.9x better than random guessing, and more than 3x better than the baseline rule.
 
-Unlike academic data science repositories that focus solely on static model training, this project emphasizes **production engineering standards**: writing reproducible automation scripts, handling large-scale data streaming without out-of-memory errors, analyzing real search engine optimization (SEO) signals, and developing interpretable, highly accurate ranking algorithms.
+## What I actually did
 
----
+- Built a data pipeline processing 78 million rows from a real search-analytics warehouse (Google Search Console + Google Analytics data), using DuckDB for memory-efficient processing.
+- Found and fixed three real data problems before trusting any result: a filter that silently dropped most of the data, a feature that leaked future information into the model, and a feature that was secretly tied to the calendar month instead of real page age.
+- Compared four model types (Logistic Regression, Decision Tree, Random Forest, LightGBM) under a validation design built to prevent the model from "cheating."
+- Reported results honestly, as a range across multiple tests, not a single best-case number.
 
 ## Technical Stack & Tooling
 * **Core Languages:** Python, Bash / Zsh
@@ -30,76 +35,18 @@ Unlike academic data science repositories that focus solely on static model trai
 * **ML Platforms & Pipelines:** Hugging Face Hub (`hf` CLI), Custom Ranking Architectures
 * **Development Environment:** VS Code (Local Linux environment utilizing isolated `venv` virtual environments), Google Colab, Jupyter Notebook
 
----
+## Project structure
+* work/notebooks/ — weekly build notebooks (data contract, baseline, model, validation, action playbook, capstone)
+* work/capstone_report.md — full written report
+* docs/index.html — the deployed research paper
 
-## Repository Architecture
-```text
-flyrank-ml-internship/
-├── work/                  # MY WORKSPACE: Weekly assignment implementations & Capstone
-│   └── notebooks/         # Executed interactive analysis & model iterations
-├── scripts/               # REFERENCE PIPELINE: Immutable end-to-end automation scripts
-├── data/                  # DATASETS: Local git-safe raw and processed feature vectors
-├── outputs/               # BENCHMARKS: Generated charts, queues, and model metrics
-└── SETUP.md / GUIDE.md    # Documentation and architecture specifications
-```
----
+## How to reproduce
+See `work/capstone_report.md`, Section 8, for exact setup steps and commands.
 
-## Weekly Engineering & Discovery Log
-* Week 1: Pipeline Automation & Baseline Ranking Discovery
+## About the Author
+**Muhammad Muzammil** *Undergraduate Software & AI Engineering Student | Applied Machine Learning Engineer*
 
-   - Objective: Establish a locally reproducible ML pipeline and evaluate the performance difference between manual heuristic rules and learned statistical models on SEO content refresh data (30,000+ records).
-
-   - Key Technical Discoveries:
-
-      Heuristics vs. Machine Learning: Built and evaluated a transparent handwritten baseline rule (Precision@50 of ~0.24). Successfully trained a Random Forest model that outperformed the manual heuristic by roughly 3x (Precision@50 of ~0.74), proving the necessity of learned multi-variable feature weighting in search ranking.
-
-      Data Leakage & Tree Ceilings: Conducted depth experiments on decision trees using a highly correlated "leaky" feature (trend_pct). Demonstrated that once a tree achieves pure leaf nodes at a shallow depth (max_depth=2), raising the tree ceiling to max_depth=4 yields identical Top-K ranking accuracy because pure branches short-circuit further splitting.
-
-      Top-K Ranking Optimization: Analyzed why standard classification accuracy is a flawed metric for information retrieval systems, shifting focus toward optimizing Precision@50 to evaluate only the highest-confidence queue recommendations.
-
-* Week 2: Interpretable Models & Feature Engineering
-
-   - Status: In Progress...
-
-   - Objective: Exploring linear formulations, decision boundaries, and mathematical feature transformations to improve ranking explainability for stakeholders.
-
-* Week 3: Gated Data Streaming & Large-Scale Pipelines
-
-   - Status: Upcoming...
-
-   - Objective: Integrating FlyRank warehouse datasets (79M+ rows) utilizing out-of-core DuckDB streaming and Hugging Face token authentication inside local hardware RAM constraints.
-
----
-
-## Local Setup & Reproduction Guide
-
-To clone this repository and reproduce the automated ML pipeline locally:
-
-
-### 1. Clone the repository
-```
-git clone [https://github.com/muzammilsharf/flyrank-ml-internship.git](https://github.com/muzammilsharf/flyrank-ml-internship.git)
-cd flyrank-ml-internship
-```
-
-### 2. Initialize and activate a local virtual environment
-```
-python -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install required dependencies
-```
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-### 4. Authenticate Hugging Face CLI (Required for streaming warehouse datasets)
-```
-hf auth login
-```
-
-### 5. Execute the master automated pipeline
-```
-python scripts/run_all.py
-```
+## Connect with Me
+* **LinkedIn:** [linkedin.com/in/muzammilsharf](https://www.linkedin.com/in/muzammilsharf/)
+* **GitHub:** [github.com/muzammilsharf](https://github.com/muzammilsharf)
+* **Email:** [sharfmuzamil@gmail.com](mailto:sharfmuzamil@gmail.com)
